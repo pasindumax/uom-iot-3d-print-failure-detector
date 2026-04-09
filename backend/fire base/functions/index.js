@@ -12,6 +12,35 @@ admin.initializeApp();
 // Ensure classifier is initialized before standard execution
 let isClassifierReady = false;
 
+/**
+ * Helper to update the function's execution status in the Realtime Database.
+ */
+async function updateFunctionStatus(data) {
+    try {
+        const statusRef = admin.database().ref('/function_status');
+        await statusRef.update({
+            ...data,
+            lastUpdated: admin.database.ServerValue.TIMESTAMP
+        });
+    } catch (error) {
+        console.error('Error updating function status:', error);
+    }
+}
+
+/**
+ * Counts the number of image files in the storage bucket to determine queue length.
+ */
+async function getQueueCount(bucket) {
+    try {
+        const [files] = await bucket.getFiles();
+        // Count all files in the bucket (since they are all images intended for processing)
+        return files.length;
+    } catch (error) {
+        console.error('Error counting files:', error);
+        return 0;
+    }
+}
+
 exports.processImage = onObjectFinalized(async (event) => {
     const object = event.data;
     const fileBucket = object.bucket;
@@ -23,13 +52,23 @@ exports.processImage = onObjectFinalized(async (event) => {
         return null;
     }
 
-    // Prepare temp file path
+    const bucket = admin.storage().bucket(fileBucket);
     const fileName = path.basename(filePath);
     const tempFilePath = path.join(os.tmpdir(), fileName);
-    
-    const bucket = admin.storage().bucket(fileBucket);
 
     try {
+        // Fetch current queue count
+        const queueCount = await getQueueCount(bucket);
+
+        // Initial status update
+        await updateFunctionStatus({
+            currentTask: 'Starting...',
+            fileName: fileName,
+            queueCount: queueCount,
+            state: 'active',
+            error: null
+        });
+
         if (!isClassifierReady) {
             await classifier.init();
             isClassifierReady = true;
@@ -37,11 +76,14 @@ exports.processImage = onObjectFinalized(async (event) => {
 
         // 1. Download file to temp directory
         console.log(`Downloading ${filePath} to ${tempFilePath}`);
+        await updateFunctionStatus({ currentTask: 'Downloading image...' });
         await bucket.file(filePath).download({ destination: tempFilePath });
 
         // 2. Read image with sharp, resize, and get raw RGB values
         console.log('Resizing image and extracting features...');
-        // We resize to 96x96 by default. If the model properties logs show a different size, update this.
+        await updateFunctionStatus({ currentTask: 'Processing image (Resizing)...' });
+        
+        // Target size based on Edge Impulse model
         const targetWidth = 96;
         const targetHeight = 96;
 
@@ -52,8 +94,6 @@ exports.processImage = onObjectFinalized(async (event) => {
             .toBuffer();
 
         // 3. Convert raw RGB buffer to the format expected by Edge Impulse
-        // Most Edge Impulse models expect a flat array of floats (RGBRGB... or RRR...GGG...BBB...)
-        // Default is interleaved RGB normalized to [0, 1]
         const features = [];
         for (let i = 0; i < buffer.length; i++) {
             features.push(buffer[i] / 255.0);
@@ -63,6 +103,7 @@ exports.processImage = onObjectFinalized(async (event) => {
 
         // 4. Run classification
         console.log('Running Edge Impulse classification...');
+        await updateFunctionStatus({ currentTask: 'Classifying image...' });
         const result = classifier.classify(features);
         console.log('Classification result:', JSON.stringify(result));
 
@@ -82,26 +123,40 @@ exports.processImage = onObjectFinalized(async (event) => {
         if (topResult) {
             console.log(`Determined Status: ${topResult} (confidence: ${maxConfidence.toFixed(4)})`);
 
-            // 6. Update Realtime Database
+            // 6. Update Realtime Database with result
+            await updateFunctionStatus({ currentTask: 'Updating database...' });
             const statusRef = admin.database().ref('/latest_print_status');
             await statusRef.set({
                 status: topResult,
                 confidence: parseFloat(maxConfidence.toFixed(4)),
                 updatedAt: admin.database.ServerValue.TIMESTAMP,
-                fileName: fileName // Track which file produced this result
+                fileName: fileName
             });
             console.log('Realtime database updated successfully.');
         } else {
             console.warn('No classification results found.');
         }
 
-        // 7. Delete the original file from Storage as requested
+        // 7. Delete the original file from Storage
         console.log(`Deleting ${filePath} from Storage...`);
+        await updateFunctionStatus({ currentTask: 'Cleaning up...' });
         await bucket.file(filePath).delete();
         console.log('File deleted successfully.');
 
+        // Final status update (Idle)
+        await updateFunctionStatus({ 
+            currentTask: 'Idle',
+            state: 'idle',
+            queueCount: Math.max(0, queueCount - 1)
+        });
+
     } catch (error) {
         console.error('Error processing image:', error);
+        await updateFunctionStatus({ 
+            currentTask: 'Error',
+            state: 'error',
+            error: error.message
+        });
     } finally {
         // Cleanup local temp file
         if (fs.existsSync(tempFilePath)) {
@@ -113,4 +168,5 @@ exports.processImage = onObjectFinalized(async (event) => {
         }
     }
 });
+
 
