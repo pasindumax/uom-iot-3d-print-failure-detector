@@ -38,50 +38,60 @@ exports.processImage = functions.storage.object().onFinalize(async (object) => {
         console.log(`Downloading ${filePath} to ${tempFilePath}`);
         await bucket.file(filePath).download({ destination: tempFilePath });
 
-        // 2. Read image with sharp, resize to 96x96, and get raw RGB values
+        // 2. Read image with sharp, resize, and get raw RGB values
         console.log('Resizing image and extracting features...');
+        // We resize to 96x96 by default. If the model properties logs show a different size, update this.
+        const targetWidth = 96;
+        const targetHeight = 96;
+
         const buffer = await sharp(tempFilePath)
-            .resize(96, 96)
+            .resize(targetWidth, targetHeight)
             .removeAlpha() // Ensure only RGB
             .raw()
             .toBuffer();
 
         // 3. Convert raw RGB buffer to the format expected by Edge Impulse
-        // Edge Impulse uses a flat array where each pixel is an integer: (R << 16) | (G << 8) | B
+        // Most Edge Impulse models expect a flat array of floats (RGBRGB... or RRR...GGG...BBB...)
+        // Default is interleaved RGB normalized to [0, 1]
         const features = [];
-        for (let i = 0; i < buffer.length; i += 3) {
-            const r = buffer[i];
-            const g = buffer[i + 1];
-            const b = buffer[i + 2];
-            features.push((r << 16) | (g << 8) | b);
+        for (let i = 0; i < buffer.length; i++) {
+            features.push(buffer[i] / 255.0);
         }
+
+        console.log(`Extracted ${features.length} features.`);
 
         // 4. Run classification
         console.log('Running Edge Impulse classification...');
         const result = classifier.classify(features);
         console.log('Classification result:', JSON.stringify(result));
 
-        // 5. Determine the status (e.g. 'fail' or 'pass')
-        // Pick the label with the highest confidence value
+        // 5. Determine the status
         let topResult = null;
         let maxConfidence = -1;
-        for (const res of result.results) {
-            if (res.value > maxConfidence) {
-                maxConfidence = res.value;
-                topResult = res.label;
+        
+        if (result.results && result.results.length > 0) {
+            for (const res of result.results) {
+                if (res.value > maxConfidence) {
+                    maxConfidence = res.value;
+                    topResult = res.label;
+                }
             }
         }
         
-        console.log(`Determined Status: ${topResult} (confidence: ${maxConfidence})`);
-
-        // 6. Update Realtime Database
         if (topResult) {
-            await admin.database().ref('/latest_print_status').set({
+            console.log(`Determined Status: ${topResult} (confidence: ${maxConfidence.toFixed(4)})`);
+
+            // 6. Update Realtime Database
+            const statusRef = admin.database().ref('/latest_print_status');
+            await statusRef.set({
                 status: topResult,
-                confidence: maxConfidence,
-                updatedAt: admin.database.ServerValue.TIMESTAMP
+                confidence: parseFloat(maxConfidence.toFixed(4)),
+                updatedAt: admin.database.ServerValue.TIMESTAMP,
+                fileName: fileName // Track which file produced this result
             });
             console.log('Realtime database updated successfully.');
+        } else {
+            console.warn('No classification results found.');
         }
 
         // 7. Delete the original file from Storage as requested
@@ -94,7 +104,12 @@ exports.processImage = functions.storage.object().onFinalize(async (object) => {
     } finally {
         // Cleanup local temp file
         if (fs.existsSync(tempFilePath)) {
-            fs.unlinkSync(tempFilePath);
+            try {
+                fs.unlinkSync(tempFilePath);
+            } catch (unlinkError) {
+                console.error('Failed to delete temp file:', unlinkError);
+            }
         }
     }
 });
+

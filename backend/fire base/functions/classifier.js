@@ -11,16 +11,45 @@ class EdgeImpulseClassifier {
         if (classifierInitialized) return;
 
         return new Promise((resolve, reject) => {
+            if (classifierInitialized) return resolve();
+
             Module.onRuntimeInitialized = () => {
-                classifierInitialized = true;
-                const ret = Module.init();
-                if (typeof ret === 'number' && ret !== 0) {
-                    return reject('init() failed with code ' + ret);
+                try {
+                    const ret = Module.init();
+                    if (typeof ret === 'number' && ret !== 0) {
+                        return reject(new Error('init() failed with code ' + ret));
+                    }
+                    classifierInitialized = true;
+                    
+                    const props = this.getProperties();
+                    console.log('Edge Impulse Model Initialized:');
+                    console.log(`- Type: ${props.model_type}`);
+                    console.log(`- Input size: ${props.input_frame_size}`);
+                    
+                    resolve();
+                } catch (err) {
+                    reject(err);
                 }
-                resolve();
             };
         });
     }
+
+    getProperties() {
+        if (!classifierInitialized) throw new Error('Module is not initialized');
+        return this._convertToOrdinaryJsObject(Module.get_properties(), Module.emcc_classification_properties_t.prototype);
+    }
+
+    _convertToOrdinaryJsObject(emboundObj, prototype) {
+        let newObj = { };
+        for (const key of Object.getOwnPropertyNames(prototype)) {
+            const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+            if (descriptor && typeof descriptor.get === 'function') {
+                newObj[key] = emboundObj[key];
+            }
+        }
+        return newObj;
+    }
+
 
     _arrayToHeap(data) {
         let typedArray = new Float32Array(data);
@@ -32,7 +61,7 @@ class EdgeImpulseClassifier {
     }
 
     _fillResultStruct(ret) {
-        const props = Module.get_properties();
+        const props = this.getProperties();
         const jsResult = {
             anomaly: ret.anomaly,
             results: []
@@ -56,7 +85,7 @@ class EdgeImpulseClassifier {
         if (!classifierInitialized) throw new Error('Module is not initialized');
 
         const obj = this._arrayToHeap(rawData);
-        const ret = Module.run_classifier(obj.buffer.byteOffset, rawData.length, debug);
+        const ret = Module.run_classifier(obj.ptr, rawData.length, debug);
         Module._free(obj.ptr);
 
         if (ret.result !== 0) {
@@ -66,6 +95,7 @@ class EdgeImpulseClassifier {
         return this._fillResultStruct(ret);
     }
 }
+
 
 const classifier = new EdgeImpulseClassifier();
 
