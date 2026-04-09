@@ -1,0 +1,82 @@
+[debug] [2026-04-09T08:34:05.206Z] ----------------------------------------------------------------------
+[debug] [2026-04-09T08:34:05.207Z] Command:       /opt/homebrew/Cellar/node/25.1.0_1/bin/node /opt/homebrew/bin/firebase deploy --only functions
+[debug] [2026-04-09T08:34:05.207Z] CLI Version:   14.26.0
+[debug] [2026-04-09T08:34:05.207Z] Platform:      darwin
+[debug] [2026-04-09T08:34:05.207Z] Node Version:  v25.1.0
+[debug] [2026-04-09T08:34:05.207Z] Time:          Thu Apr 09 2026 14:04:05 GMT+0530 (India Standard Time)
+[debug] [2026-04-09T08:34:05.207Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-09T08:34:05.270Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-09T08:34:05.270Z] > authorizing via signed-in user (pasindu321@gmail.com)
+[debug] [2026-04-09T08:34:05.270Z] [iam] checking project d-print-failure-detector for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-04-09T08:34:05.270Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:05.270Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:05.271Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector:testIamPermissions [none]
+[debug] [2026-04-09T08:34:05.271Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector:testIamPermissions x-goog-quota-user=projects/d-print-failure-detector
+[debug] [2026-04-09T08:34:05.271Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-04-09T08:34:06.661Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector:testIamPermissions 200
+[debug] [2026-04-09T08:34:06.662Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-04-09T08:34:06.662Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:06.662Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:06.662Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/d-print-failure-detector/serviceAccounts/d-print-failure-detector@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-04-09T08:34:06.662Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/d-print-failure-detector/serviceAccounts/d-print-failure-detector@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-04-09T08:34:08.160Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/d-print-failure-detector/serviceAccounts/d-print-failure-detector@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-04-09T08:34:08.161Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/d-print-failure-detector/serviceAccounts/d-print-failure-detector@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'd-print-failure-detector'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-04-09T08:34:08.165Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:08.165Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:08.166Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector [none]
+[debug] [2026-04-09T08:34:08.489Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector 200
+[debug] [2026-04-09T08:34:08.489Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/d-print-failure-detector {"projectNumber":"860249710452","projectId":"d-print-failure-detector","lifecycleState":"ACTIVE","name":"3d-print-failure-detector","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-04-09T06:16:42.135Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-04-09T08:34:08.490Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:08.490Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:08.490Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/d-print-failure-detector/adminSdkConfig [none]
+[debug] [2026-04-09T08:34:09.068Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/d-print-failure-detector/adminSdkConfig 200
+[debug] [2026-04-09T08:34:09.068Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/d-print-failure-detector/adminSdkConfig {"projectId":"d-print-failure-detector","databaseURL":"https://d-print-failure-detector-default-rtdb.firebaseio.com","storageBucket":"d-print-failure-detector.firebasestorage.app"}
+[debug] [2026-04-09T08:34:09.069Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:09.069Z] Checked if tokens are valid: true, expires at: 1775726898927
+[debug] [2026-04-09T08:34:09.069Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/d-print-failure-detector/configs [none]
+[debug] [2026-04-09T08:34:09.556Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/d-print-failure-detector/configs 200
+[debug] [2026-04-09T08:34:09.556Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/d-print-failure-detector/configs {}
+[debug] [2026-04-09T08:34:09.558Z] Validating nodejs source
+[warn] ⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] ⚠  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2026-04-09T08:34:10.165Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^13.7.0",
+    "firebase-functions": "^7.2.3",
+    "sharp": "^0.32.6"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2026-04-09T08:34:10.165Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[info] i  functions: You are using a version of firebase-functions SDK (4.9.0) that does not have support for the newest Firebase Extensions features. Please update firebase-functions SDK to >=5.1.0 to use them correctly 
+[debug] [2026-04-09T08:34:10.165Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-04-09T08:34:10.169Z] Found firebase-functions binary at '/Volumes/PasinduSSD/git/campes progect/uom-iot-3d-print-failure-detector/backend/fire base/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8945
+
+[debug] [2026-04-09T08:34:10.667Z] Got response from /__/functions.yaml {"endpoints":{"processImage":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"eventTrigger":{"eventType":"google.storage.object.finalize","eventFilters":{"resource":"projects/_/buckets/d-print-failure-detector.firebasestorage.app"},"retry":false},"labels":{},"entryPoint":"processImage"}},"specVersion":"v1alpha1","requiredAPIs":[]}
