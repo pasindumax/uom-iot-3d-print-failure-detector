@@ -10,28 +10,66 @@ class EdgeImpulseClassifier {
     async init() {
         if (classifierInitialized) return;
 
+        // Some Emscripten modules provide a .ready promise
+        if (Module.ready && typeof Module.ready.then === 'function') {
+            await Module.ready;
+        }
+
         return new Promise((resolve, reject) => {
             if (classifierInitialized) return resolve();
 
+            // If it appears already initialized or ready to be init()'d
+            if (Module.instance || Module.calledRun) {
+                try {
+                    this._doInit();
+                    return resolve();
+                } catch (err) {
+                    return reject(err);
+                }
+            }
+
             Module.onRuntimeInitialized = () => {
                 try {
-                    const ret = Module.init();
-                    if (typeof ret === 'number' && ret !== 0) {
-                        return reject(new Error('init() failed with code ' + ret));
-                    }
-                    classifierInitialized = true;
-                    
-                    const props = this.getProperties();
-                    console.log('Edge Impulse Model Initialized:');
-                    console.log(`- Type: ${props.model_type}`);
-                    console.log(`- Input size: ${props.input_frame_size}`);
-                    
+                    this._doInit();
                     resolve();
                 } catch (err) {
                     reject(err);
                 }
             };
+
+            // Fallback: if after 5 seconds it's still not initialized, try to force it if Module exists
+            setTimeout(() => {
+                if (!classifierInitialized) {
+                    console.warn('Initialization timeout, attempting forced init...');
+                    try {
+                        this._doInit();
+                        resolve();
+                    } catch (err) {
+                        // If it still fails, just wait or reject
+                        console.error('Forced init failed:', err);
+                    }
+                }
+            }, 5000);
         });
+    }
+
+    _doInit() {
+        if (classifierInitialized) return;
+        
+        if (typeof Module.init !== 'function') {
+            throw new Error('Module.init is not a function. WASM module might not be loaded correctly.');
+        }
+
+        const ret = Module.init();
+        if (typeof ret === 'number' && ret !== 0) {
+            throw new Error('init() failed with code ' + ret);
+        }
+        classifierInitialized = true;
+        
+        const props = this.getProperties();
+        console.log('Edge Impulse Model Initialized:');
+        console.log(`- Type: ${props.model_type}`);
+        console.log(`- Input size: ${props.input_frame_size}`);
     }
 
     getProperties() {

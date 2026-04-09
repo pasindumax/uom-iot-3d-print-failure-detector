@@ -41,7 +41,10 @@ async function getQueueCount(bucket) {
     }
 }
 
-exports.processImage = onObjectFinalized(async (event) => {
+exports.processImage = onObjectFinalized({
+    memory: '1GiB',
+    timeoutSeconds: 300
+}, async (event) => {
     const object = event.data;
     const fileBucket = object.bucket;
     const filePath = object.name;
@@ -49,6 +52,7 @@ exports.processImage = onObjectFinalized(async (event) => {
 
     // Exit if this is triggered on a file that is not an image
     if (!contentType.startsWith('image/')) {
+        console.log(`Skipping non-image file: ${filePath}`);
         return null;
     }
 
@@ -57,12 +61,13 @@ exports.processImage = onObjectFinalized(async (event) => {
     const tempFilePath = path.join(os.tmpdir(), fileName);
 
     try {
+        console.log(`Job started for: ${fileName}`);
         // Fetch current queue count
         const queueCount = await getQueueCount(bucket);
 
         // Initial status update
         await updateFunctionStatus({
-            currentTask: 'Starting...',
+            currentTask: 'Initializing Classifier...',
             fileName: fileName,
             queueCount: queueCount,
             state: 'active',
@@ -70,8 +75,12 @@ exports.processImage = onObjectFinalized(async (event) => {
         });
 
         if (!isClassifierReady) {
+            console.log('Classifier not ready. Initializing...');
             await classifier.init();
             isClassifierReady = true;
+            console.log('Classifier initialization complete.');
+        } else {
+            console.log('Using pre-warmed classifier.');
         }
 
         // 1. Download file to temp directory
@@ -80,26 +89,28 @@ exports.processImage = onObjectFinalized(async (event) => {
         await bucket.file(filePath).download({ destination: tempFilePath });
 
         // 2. Read image with sharp, resize, and get raw RGB values
-        console.log('Resizing image and extracting features...');
-        await updateFunctionStatus({ currentTask: 'Processing image (Resizing)...' });
+        console.log('Resizing image and extracting features (Grayscale)...');
+        await updateFunctionStatus({ currentTask: 'Processing image (Resizing/Grayscale)...' });
         
         // Target size based on Edge Impulse model
         const targetWidth = 96;
         const targetHeight = 96;
 
+        // The model expects 9216 features (96x96), which signifies a grayscale image
         const buffer = await sharp(tempFilePath)
             .resize(targetWidth, targetHeight)
-            .removeAlpha() // Ensure only RGB
+            .grayscale() // Convert to grayscale to match 96x96=9216 features
             .raw()
             .toBuffer();
 
-        // 3. Convert raw RGB buffer to the format expected by Edge Impulse
+        // 3. Convert raw grayscale buffer to the format expected by Edge Impulse
         const features = [];
         for (let i = 0; i < buffer.length; i++) {
-            features.push(buffer[i] / 255.0);
+            // Updated: The model expects raw pixel values (0-255), not normalized (0-1)
+            features.push(buffer[i]);
         }
 
-        console.log(`Extracted ${features.length} features.`);
+        console.log(`Extracted ${features.length} features in range 0-255. (Expected: 9216)`);
 
         // 4. Run classification
         console.log('Running Edge Impulse classification...');
@@ -168,5 +179,6 @@ exports.processImage = onObjectFinalized(async (event) => {
         }
     }
 });
+
 
 
