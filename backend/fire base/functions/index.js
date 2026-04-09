@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+const { onObjectFinalized } = require('firebase-functions/v2/storage');
 const admin = require('firebase-admin');
 const sharp = require('sharp');
 const path = require('path');
@@ -12,7 +12,8 @@ admin.initializeApp();
 // Ensure classifier is initialized before standard execution
 let isClassifierReady = false;
 
-exports.processImage = functions.storage.object().onFinalize(async (object) => {
+exports.processImage = onObjectFinalized(async (event) => {
+    const object = event.data;
     const fileBucket = object.bucket;
     const filePath = object.name;
     const contentType = object.contentType;
