@@ -1,4 +1,4 @@
-// Classifier module
+
 let classifierInitialized = false;
 Module.onRuntimeInitialized = function() {
     classifierInitialized = true;
@@ -60,10 +60,7 @@ class EdgeImpulseClassifier {
         return this._convertToOrdinaryJsObject(Module.get_properties(), Module.emcc_classification_properties_t.prototype);
     }
 
-    /**
-     * Override the threshold on a learn block (you can find thresholds via getProperties().thresholds)
-     * @param {*} obj, e.g. { id: 16, min_score: 0.2 } to set min. object detection threshold to 0.2 for block ID 16
-     */
+
     setThreshold(obj) {
         const ret = Module.set_threshold(obj);
         if (!ret.success) {
@@ -86,7 +83,7 @@ class EdgeImpulseClassifier {
             const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
 
             if (descriptor && typeof descriptor.get === 'function') {
-                newObj[key] = emboundObj[key]; // Evaluates the getter and assigns as an own property.
+                newObj[key] = emboundObj[key];
             }
         }
         return newObj;

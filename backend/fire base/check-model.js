@@ -30,7 +30,7 @@ class EdgeImpulseClassifier {
             const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
 
             if (descriptor && typeof descriptor.get === 'function') {
-                newObj[key] = emboundObj[key]; // Evaluates the getter and assigns as an own property.
+                newObj[key] = emboundObj[key];
             }
         }
         return newObj;

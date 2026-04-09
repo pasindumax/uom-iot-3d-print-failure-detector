@@ -10,7 +10,7 @@ class EdgeImpulseClassifier {
     async init() {
         if (classifierInitialized) return;
 
-        // Some Emscripten modules provide a .ready promise
+
         if (Module.ready && typeof Module.ready.then === 'function') {
             await Module.ready;
         }
@@ -18,7 +18,7 @@ class EdgeImpulseClassifier {
         return new Promise((resolve, reject) => {
             if (classifierInitialized) return resolve();
 
-            // If it appears already initialized or ready to be init()'d
+
             if (Module.instance || Module.calledRun) {
                 try {
                     this._doInit();
@@ -37,7 +37,7 @@ class EdgeImpulseClassifier {
                 }
             };
 
-            // Fallback: if after 5 seconds it's still not initialized, try to force it if Module exists
+
             setTimeout(() => {
                 if (!classifierInitialized) {
                     console.warn('Initialization timeout, attempting forced init...');
@@ -45,7 +45,7 @@ class EdgeImpulseClassifier {
                         this._doInit();
                         resolve();
                     } catch (err) {
-                        // If it still fails, just wait or reject
+
                         console.error('Forced init failed:', err);
                     }
                 }
@@ -55,7 +55,7 @@ class EdgeImpulseClassifier {
 
     _doInit() {
         if (classifierInitialized) return;
-        
+
         if (typeof Module.init !== 'function') {
             throw new Error('Module.init is not a function. WASM module might not be loaded correctly.');
         }
@@ -65,7 +65,7 @@ class EdgeImpulseClassifier {
             throw new Error('init() failed with code ' + ret);
         }
         classifierInitialized = true;
-        
+
         const props = this.getProperties();
         console.log('Edge Impulse Model Initialized:');
         console.log(`- Type: ${props.model_type}`);
