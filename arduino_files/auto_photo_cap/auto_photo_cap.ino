@@ -110,12 +110,12 @@ void getPic() {
         Serial.println("Saved Jpg: " + picName);
       } else {
         Serial.println("Jpg fail");
-      }
+       }
     } else {
       savedPic.write(myPic->buf, myPic->len);
       Serial.println("Saved normal: " + picName);
     }
-  }
+  } 
   
   savedPic.close();
   esp_camera_fb_return(myPic);
@@ -123,6 +123,6 @@ void getPic() {
 
 void loop() {
   getPic();
-  Serial.println("Wait 5s...");
+  Serial.println("Wait 5sseconds");
   delay(5000);
 }
